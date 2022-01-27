@@ -33,7 +33,7 @@ Load tidyverse in pretty much every notebook.
 ## Code Block
 
 ```{r}
-# This is a comment. Code can go run in these blocks. 
+# This is a comment. Code can run in these blocks. 
 ```
 
 %>% means "and then..." adds a function
