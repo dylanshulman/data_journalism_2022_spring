@@ -43,6 +43,7 @@ glimpse() get a sense of the data
 group_by()
 summarize() 
 head() see first 6 rows of data
+arrange(desc())
 
 ## Aggregate Functions IN PROGRESS FROM PRE LAB 1
 
