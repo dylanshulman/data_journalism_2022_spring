@@ -19,4 +19,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Consider this my personal guide to the commands and functions you will learn. In general, when you come across an R command or function that you want to remember, put it in here along with a description of what it does and when you'd use it.
 
-Test
+## Working Directory
+
+Above the file finder window, click "More" and select "Set as working directory." The command function setwd() will appear. 
