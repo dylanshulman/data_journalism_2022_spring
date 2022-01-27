@@ -22,3 +22,38 @@ Consider this my personal guide to the commands and functions you will learn. In
 ## Working Directory
 
 Above the file finder window, click "More" and select "Set as working directory." The command function setwd() will appear. 
+
+## Libraries 
+
+Install: install.packagaes()
+Load: library()
+
+Load tidyverse in pretty much every notebook. 
+
+## Code Block
+
+```{r}
+# This is a comment. Code can go run in these blocks. 
+```
+
+%>% means "and then..." adds a function
+## Filter Functions
+
+glimpse() get a sense of the data
+group_by()
+summarize() 
+head() see first 6 rows of data
+
+## Aggregate Functions IN PROGRESS FROM PRE LAB 1
+
+summarise()
+
+count_x = n()
+
+total_x = sum(amount)
+    mean_loan_amount = mean(amount),
+    median_loan_amount = median(amount),
+    min_loan_amount = min(amount),
+    max_loan_amount = max(amount)
+  ) %>%
+  arrange(desc(max_loan_amount))
