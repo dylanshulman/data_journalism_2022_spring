@@ -44,6 +44,9 @@ group_by()
 summarize() 
 head() see first 6 rows of data
 arrange(desc())
+select(column, column) just shows listed columns
+filter(column == value & | column <>= value)
+nrow(dataframe)
 
 ## Aggregate Functions IN PROGRESS FROM PRE LAB 1
 
@@ -58,3 +61,17 @@ total_x = sum(amount)
     max_loan_amount = max(amount)
   ) %>%
   arrange(desc(max_loan_amount))
+  
+Pre Lab 2
+mutate(new_column = old column +-*/ old column)
+mutate(overwrite dataframe somehow)
+mutate(str_to_upper(column)) makes everything uppercase
+        (in_out = if_else(
+            column == 'choice,' "response," "exception"
+          )
+        ) this code makes a new column as like an if-then statement
+mutate(new_column = case_when(
+    column < 10 ~ 'under_10',
+    column >= 10 & column < 25 ~ '10_to_25'
+            )
+          ) this code allows you to create a new column and assign an indicator from another column. In this case, you're essentially telling it that if the value is under 10, <10, mark it as 'under_10' in the new column, <10=under_10. 
