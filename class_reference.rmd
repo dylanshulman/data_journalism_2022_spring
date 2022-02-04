@@ -27,6 +27,8 @@ Above the file finder window, click "More" and select "Set as working directory.
 
 Install: install.packagaes()
 Load: library()
+read_csv() is a tidyverse function that attempts to read date type of a dataframe
+read.cvs() is the r function without reading data type
 
 Load tidyverse in pretty much every notebook. 
 
@@ -47,6 +49,7 @@ arrange(desc())
 select(column, column) just shows listed columns
 filter(column == value & | column <>= value)
 nrow(dataframe)
+is.na(column) brings up NA responses in a column
 
 ## Aggregate Functions IN PROGRESS FROM PRE LAB 1
 
@@ -75,3 +78,5 @@ mutate(new_column = case_when(
     column >= 10 & column < 25 ~ '10_to_25'
             )
           ) this code allows you to create a new column and assign an indicator from another column. In this case, you're essentially telling it that if the value is under 10, <10, mark it as 'under_10' in the new column, <10=under_10. 
+mutate(CleanDate = ymd_hms(column)) selects a column to make the data <date>
+mutate(Month = floor_date(column, "month")) idk
