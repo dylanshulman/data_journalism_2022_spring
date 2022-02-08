@@ -50,6 +50,7 @@ select(column, column) just shows listed columns
 filter(column == value & | column <>= value)
 nrow(dataframe)
 is.na(column) brings up NA responses in a column
+get_dupes() shows duplicate rows
 
 ## Aggregate Functions IN PROGRESS FROM PRE LAB 1
 
@@ -69,14 +70,24 @@ Pre Lab 2
 mutate(new_column = old column +-*/ old column)
 mutate(overwrite dataframe somehow)
 mutate(str_to_upper(column)) makes everything uppercase
-        (in_out = if_else(
-            column == 'choice,' "response," "exception"
-          )
-        ) this code makes a new column as like an if-then statement
+mutate(str_to_title(column)) makes first letter uppercase
+mutate(in_out = if_else(
+      column == 'choice,' "response," "exception"
+       )
+     ) this code makes a new column as like an if-then statement
 mutate(new_column = case_when(
     column < 10 ~ 'under_10',
     column >= 10 & column < 25 ~ '10_to_25'
             )
           ) this code allows you to create a new column and assign an indicator from another column. In this case, you're essentially telling it that if the value is under 10, <10, mark it as 'under_10' in the new column, <10=under_10. 
 mutate(CleanDate = ymd_hms(column)) selects a column to make the data <date>
-mutate(Month = floor_date(column, "month")) idk
+mutate(new_column = floor_date(column, "month")) makes a column based on month, can be counted
+mutate(column = as.character(column)) makes the column datatype <chr>
+mutate(column = as.numeric(column)) makes the column datatype <dbl>
+
+# Janitor
+clean_names() cleans up column formats
+rename() 
+distinct() removes duplicate rows
+mutate(column = str_sub(column, start=xL, end=xL)) removes excess characters from a column
+str_detect(city,"^Arnl") ~ "Arnold",) idk
