@@ -79,7 +79,12 @@ mutate(new_column = case_when(
     column < 10 ~ 'under_10',
     column >= 10 & column < 25 ~ '10_to_25'
             )
-          ) this code allows you to create a new column and assign an indicator from another column. In this case, you're essentially telling it that if the value is under 10, <10, mark it as 'under_10' in the new column, <10=under_10. 
+          ) this code allows you to create a new column and assign an indicator from another
+          column. In this case, you're essentially telling it that if the value is under 10, <10,       (new_column = case_when(
+          city == "Anold" ~ "Arnold",
+          TRUE ~ city)
+          ) this makes any Anold turn to Arnold while keeping everything the same, TRUE
+mark it as 'under_10' in the new column, <10=under_10. 
 mutate(CleanDate = ymd_hms(column)) selects a column to make the data <date>
 mutate(new_column = floor_date(column, "month")) makes a column based on month, can be counted
 mutate(column = as.character(column)) makes the column datatype <chr>
@@ -89,5 +94,5 @@ mutate(column = as.numeric(column)) makes the column datatype <dbl>
 clean_names() cleans up column formats
 rename() 
 distinct() removes duplicate rows
-mutate(column = str_sub(column, start=xL, end=xL)) removes excess characters from a column
-str_detect(city,"^Arnl") ~ "Arnold",) idk
+mutate(column = str_sub(column, start=xL, end=xL)) removes excess characters from a column "x characters from the L eft"
+str_detect(city,"^Arnl") ~ "Arnold",) str_detect looks for characters in a character column, ^ means beginning of column 
