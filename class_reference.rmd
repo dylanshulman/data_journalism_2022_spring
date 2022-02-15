@@ -89,7 +89,9 @@ mutate(CleanDate = ymd_hms(column)) selects a column to make the data <date>
 mutate(new_column = floor_date(column, "month")) makes a column based on month, can be counted
 mutate(column = as.character(column)) makes the column datatype <chr>
 mutate(column = as.numeric(column)) makes the column datatype <dbl>
-
+mutate(across(column, as.character)) makes column datatype <chr>
+bind_rows(list(dataframe, dataframe, dataframe)) puts dataframes together if column structure is the same
+left_join(dataframe,by=c("column_1"="column_2")) combine two dataframes and elminates nonmatches? columns can lineup too. "by" is which column they have in common
 # Janitor
 clean_names() cleans up column formats
 rename() 
