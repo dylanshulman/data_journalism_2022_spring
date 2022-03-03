@@ -25,7 +25,8 @@ In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
 Loading required libraries for this analysis.
 
 ```{r echo=FALSE, message=FALSE}
-
+options(scipen=999)
+library(tidyverse)
 ```
 
 ## Load and Cleaning Data
@@ -34,7 +35,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 ```{r}
 # Load required data
-
+data <- read.csv("data/CCRB-Complaint-Data_202007271729/allegations_202007271729.csv")
 # Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
 
 # Clean required data and prepare for analysis if needed. 
@@ -52,7 +53,14 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ```{r}
 # Put code to reverse engineer sentence here
+cleaned_data <- data %>% 
+  distinct() 
 
+cleaned_data %>% 
+  filter(rank_now == "Captain") %>% 
+  filter(str_detect(board_disposition, "^Subs")) %>% 
+  group_by() %>% 
+  summarize(count = n())
 # Display results of code below this codeblock
 
 ```
