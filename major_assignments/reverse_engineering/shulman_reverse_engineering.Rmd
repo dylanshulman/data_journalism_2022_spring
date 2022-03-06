@@ -1,6 +1,6 @@
 ---
 title: "Reverse Engineering Project"
-author: "Student names here"
+author: "Dylan Shulman, Katie Benzan, Marianeli De Leon"
 date: "Date here"
 output:
   html_document:
@@ -18,8 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction 
 
-In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
-
+In this notebook, we are reverse engineering the story, "Over a Dozen Black and Latino Men Accused a Cop of Humiliating, Invasive Strip Searches. The NYPD Kept Promoting Him."
+(https://www.propublica.org/article/over-a-dozen-black-and-latino-men-accused-a-cop-of-humiliating-invasive-strip-searches-the-nypd-kept-promoting-him)
+`
 ## Load libraries
 
 Loading required libraries for this analysis.
@@ -27,7 +28,6 @@ Loading required libraries for this analysis.
 ```{r echo=FALSE, message=FALSE}
 options(scipen=999)
 library(tidyverse)
-library(janitor)
 ```
 
 ## Load and Cleaning Data
