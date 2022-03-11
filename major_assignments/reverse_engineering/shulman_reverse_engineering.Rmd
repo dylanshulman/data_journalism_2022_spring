@@ -108,14 +108,22 @@ mccormack_complaints %>%
 
 ### Sentence 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: “An overwhelming majority of the city’s 36,000 officers do not have a single substantiated complaint on their records; only 1 in 9 does.”
+* **Analysis summary**: I was able to calculate this ratio with a simple equation after narrowing down the dataset to individual officers. With a clean dataset like this, it was a simple and straightforward process. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
-# Display results of code below this codeblock
+# finding the number of officers in the dataset 
+total_officers <- data %>% 
+  group_by(unique_mos_id) %>% 
+  summarise(count = n()) %>% 
+  nrow()
 
+# the math to get the ratio 
+total_officers / 36000 * 9
+
+# Display results of code below this codeblock
 ```
 
 ### Sentence 4
