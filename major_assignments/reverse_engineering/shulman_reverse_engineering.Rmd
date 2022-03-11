@@ -76,14 +76,34 @@ data %>%
 
 ### Sentence 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: "Of at least 77 allegations made against him in 26 separate CCRB complaints, 29 were unsubstantiated; five were “unfounded,” meaning investigators concluded the incident never took place; and 27 were “exonerated,” meaning the conduct fell within patrol guidelines. Investigators have never proved that McCormack strip-searched men in the street, let alone penetrated them with his finger, though the city settled four lawsuits involving strip-search allegations against him for a total $184,500."
+* **Analysis summary**: I was able to find almost every answer to this paragraph. I believe the data does not include the five unfounded complaints made against McCormack, and that's why our total complaint number is only 72 and the board_disposition column does not include an option of "unfounded." Otherwise, I was able to gather everything in the first sentence -- the second sentence was likely pulled from legal documents and figures not in this dataset, as there's no option for "lawsuit" or a number totaling money spent in lawsuits.  
 
 ```{r}
 # Put code to reverse engineer sentence here
+mccormack_complaints <- data %>% 
+  filter(unique_mos_id == "18589")
+
+#" Of at least 77 allegations..."
+mccormack_complaints %>% nrow()
+
+# "...in 26 separate CCRB complaints..."
+mccormack_complaints %>% 
+  group_by(complaint_id) %>% 
+  summarise(count = n()) %>% 
+  nrow()
+
+# "...29 were unsubstantiated..."
+mccormack_complaints %>% 
+  filter(board_disposition == "Unsubstantiated") %>% 
+  nrow()
+
+# "...27 were “exonerated”..."
+mccormack_complaints %>% 
+  filter(board_disposition == "Exonerated") %>% 
+  nrow()
 
 # Display results of code below this codeblock
-
 ```
 
 ### Sentence 3
