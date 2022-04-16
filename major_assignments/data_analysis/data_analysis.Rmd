@@ -1,0 +1,73 @@
+---
+title: "data_analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Analysis Notebook
+
+```{r}
+# Loading libraries and cleaning data 
+
+library(tidyverse)
+library(janitor)
+data_2020 <- read_csv("2020-08-19.csv") %>% clean_names %>% rename(row = x1)
+data_2022 <- read_csv("2022-01-08.csv") %>% clean_names %>% rename(row = x1)
+reviews_19m <- read_csv("bgg-19m-reviews.csv") %>% clean_names %>% rename(row = x1)
+detailed_data <- read_csv("games_detailed_info.csv") %>% clean_names %>% rename(row = x1)
+```
+
+```{r}
+# Exploratory analysis 
+
+glimpse(detailed_data)
+
+# Most high rated category
+
+detailed_data %>% 
+  filter(average > 7) %>% 
+  group_by(boardgamecategory) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  head(10)
+
+# User with the most reviews 
+
+reviews_19m %>% 
+  group_by(user) %>% 
+  summarise(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  head(10)
+
+# Does anyone call a game the "worst game?" Which is called that the most? Spoiler: it's Monopoly
+
+reviews_19m %>% 
+  filter(rating < 3) %>% 
+  filter(str_detect(comment, "worst game")) %>% 
+  group_by(name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+# Dataframe showing difference between 2022 reviews and 2020 reviews 
+
+old_data <- data_2020 %>% 
+  select(id, rank, average, bayes_average, users_rated) %>% 
+  rename(rank_2020 = rank) %>% 
+  rename(average_2020 = average) %>% 
+  rename(bayes_average_2020 = bayes_average) %>% 
+  rename(users_rated_2020 = users_rated)
+pandy_data <- left_join(data_2022, old_data, by=("id"))
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
