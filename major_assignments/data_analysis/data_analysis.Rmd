@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Data Analysis Notebook
+Dylan Shulman, Katie Benzan, Marianeli De Leon
 
 ```{r}
 # Loading libraries and cleaning data 
@@ -60,6 +61,8 @@ old_data <- data_2020 %>%
   rename(bayes_average_2020 = bayes_average) %>% 
   rename(users_rated_2020 = users_rated)
 pandy_data <- left_join(data_2022, old_data, by=("id"))
+
+# I think we'll have trouble discovering how many times visitors went to the website over the course of the pandemic because we don't have any date information from before 2020 as a control. The biggest limitation of the data is its lack of date and time for reviews. Otherwise, I believe we'll be able to answer our questions. 
 ```
 
 ## Including Plots
