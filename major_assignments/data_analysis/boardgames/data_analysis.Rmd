@@ -63,6 +63,59 @@ old_data <- data_2020 %>%
 pandy_data <- left_join(data_2022, old_data, by=("id"))
 
 # I think we'll have trouble discovering how many times visitors went to the website over the course of the pandemic because we don't have any date information from before 2020 as a control. The biggest limitation of the data is its lack of date and time for reviews. Otherwise, I believe we'll be able to answer our questions. 
+
+# Question 1: Did the pandemic affect the number of reviews or the attitude of reviews?
+
+# First, gotta do a couple mutations to make difference columns 
+
+pandy_data <- pandy_data %>% 
+  mutate(rank_diff = rank - rank_2020) %>% 
+  mutate(average_diff = average - average_2020) %>% 
+  mutate(users_rated_diff = users_rated - users_rated_2020)
+
+# Averages 
+
+pandy_data %>% 
+  filter(!is.na(average_diff)) %>% 
+  summarize(total = sum(average_diff)) %>% 
+  as.numeric / nrow(pandy_data) 
+
+pandy_data %>% 
+  filter(!is.na(users_rated_diff)) %>% 
+  summarize(total = sum(users_rated_diff)) %>% 
+  as.numeric / nrow(pandy_data)   
+
+# New ratings 
+
+users_22 <- pandy_data %>% 
+  filter(!is.na(users_rated)) %>%
+  summarize(total = sum(users_rated))
+
+users_20 <- pandy_data %>% 
+  filter(!is.na(users_rated_2020)) %>%
+  summarize(total = sum(users_rated_2020))
+
+users_22 - users_20
+
+# Min and Max
+
+max(pandy_data$average_diff, na.rm = TRUE) 
+min(pandy_data$average_diff, na.rm = TRUE)
+pandy_data %>% 
+  filter(average_diff == 2.2)
+pandy_data %>% 
+  filter(average_diff == -3.51)
+
+# The minimum wasn't very interesting because it didn't have many ratings, but the max returned Pandemic Legacy board game, a 2020 release. It went up 2.2 points and got thousands more reviews over the two years. 
+
+pandemic_legacy_reviews <- reviews_19m %>% 
+  filter(name == "Pandemic Legacy: Season 0")
+
+median(pandemic_legacy_reviews$rating)
+pandemic_legacy_reviews %>% 
+  group_by(rating) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
 ```
 
 ## Including Plots
