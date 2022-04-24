@@ -20,10 +20,9 @@ data_2022 <- read_csv("2022-01-08.csv") %>% clean_names %>% rename(row = x1)
 reviews_19m <- read_csv("bgg-19m-reviews.csv") %>% clean_names %>% rename(row = x1)
 detailed_data <- read_csv("games_detailed_info.csv") %>% clean_names %>% rename(row = x1)
 ```
-
-```{r}
 # Exploratory analysis 
 
+```{r}
 glimpse(detailed_data)
 
 # Most high rated category
@@ -61,11 +60,12 @@ old_data <- data_2020 %>%
   rename(bayes_average_2020 = bayes_average) %>% 
   rename(users_rated_2020 = users_rated)
 pandy_data <- left_join(data_2022, old_data, by=("id"))
+```
 
-# I think we'll have trouble discovering how many times visitors went to the website over the course of the pandemic because we don't have any date information from before 2020 as a control. The biggest limitation of the data is its lack of date and time for reviews. Otherwise, I believe we'll be able to answer our questions. 
+I think we'll have trouble discovering how many times visitors went to the website over the course of the pandemic because we don't have any date information from before 2020 as a control. The biggest limitation of the data is its lack of date and time for reviews. Otherwise, I believe we'll be able to answer our questions. 
 
 # Question 1: Did the pandemic affect the number of reviews or the attitude of reviews?
-
+```{r}
 # First, gotta do a couple mutations to make difference columns 
 
 pandy_data <- pandy_data %>% 
@@ -84,7 +84,11 @@ pandy_data %>%
   filter(!is.na(users_rated_diff)) %>% 
   summarize(total = sum(users_rated_diff)) %>% 
   as.numeric / nrow(pandy_data)   
+```
+Average difference in rating: -0.02565801
+Average number of new ratings: 124.5064
 
+```{r}
 # New ratings 
 
 users_22 <- pandy_data %>% 
@@ -96,7 +100,10 @@ users_20 <- pandy_data %>%
   summarize(total = sum(users_rated_2020))
 
 users_22 - users_20
+```
+3,116,253 new ratings total. 
 
+```{r}
 # Min and Max
 
 max(pandy_data$average_diff, na.rm = TRUE) 
@@ -105,25 +112,121 @@ pandy_data %>%
   filter(average_diff == 2.2)
 pandy_data %>% 
   filter(average_diff == -3.51)
+```
+The minimum wasn't very interesting because it didn't have many ratings, but the max returned Pandemic Legacy board game, a 2020 release. It went up 2.2 points and got thousands more reviews over the two years. It's a game about a Soviet bioweapon. 
 
-# The minimum wasn't very interesting because it didn't have many ratings, but the max returned Pandemic Legacy board game, a 2020 release. It went up 2.2 points and got thousands more reviews over the two years. 
-
-pandemic_legacy_reviews <- reviews_19m %>% 
-  filter(name == "Pandemic Legacy: Season 0")
-
+```{r}
 median(pandemic_legacy_reviews$rating)
 pandemic_legacy_reviews %>% 
   group_by(rating) %>% 
   summarize(count = n()) %>% 
   arrange(desc(count))
+
+# Data set for later exploration of Pandemic
+pandemic_legacy_reviews <- reviews_19m %>% 
+  filter(name == "Pandemic Legacy: Season 0")
+```
+The game got crazy high reviews with a median of 9. 
+
+# Number 3: What type of game (multiplayer or single-player) has the most reviews? Most positive reviews? Most negative reviews?
+```{r}
+# most reviews
+most_reviews <- reviews_19m %>% 
+  group_by(name) %>% 
+  summarise(
+    number = n()
+  ) %>% 
+  arrange(desc(number))
 ```
 
-## Including Plots
+Most reviews: Pandemic (108,971)
 
-You can also embed plots, for example:
+```{r}
+# most positive reviews
+# positive = rating > 7
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+pos_reviews <- reviews_19m %>% 
+  filter(rating > 7) %>% 
+  group_by(name) %>% 
+  summarise(
+    pos_number = n()
+  ) %>% 
+  arrange(desc(pos_number))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Most pos reviews: Pandemic (64,574)
+
+```{r}
+# most negative reviews
+# negative = rating < 4
+
+neg_reviews <- reviews_19m %>% 
+  filter(rating < 4) %>% 
+  group_by(name) %>% 
+  summarise(
+    neg_number = n()
+  ) %>% 
+  arrange(desc(neg_number))
+```
+
+Most neg reviews: Monopoly (10,457)
+
+```{r}
+# most neutral reviews
+# neutral = 4 < rating < 7
+
+neutral_reviews <- reviews_19m %>% 
+  filter(rating < 7 & rating > 4) %>% 
+  group_by(name) %>% 
+  summarise(
+    neutral_number = n()
+  ) %>% 
+  arrange(desc(neutral_number))
+```
+
+Most neutral reviews: Catan (28,966)
+
+# Question 4
+```{r}
+first_games_2020<-read_csv("data/2020-08-19.csv")%>% 
+  clean_names %>% rename(row = x1)
+second_games_2022<-read_csv("data/2022-01-08.csv")%>% 
+  clean_names %>% rename(row = x1)
+first_reviews_15m<-read_csv("data/bgg-15m-reviews.csv")%>% 
+  clean_names %>% rename(row = x1)
+second_reviews_19m<-read_csv("data/bgg-15m-reviews.csv")%>% 
+  clean_names %>% rename(row = x1)
+game_details<-read_csv("data/games_detailed_info.csv")%>% 
+  clean_names %>% rename(row = x1)
+```
+```{r}
+game_details %>% 
+  filter(average > 7) %>% 
+  group_by(boardgamecategory) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  head(10)
+second_reviews_19m %>% 
+  group_by(user) %>% 
+  summarise(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  head(10)
+second_reviews_19m %>% 
+  filter(rating < 3) %>% 
+  filter(str_detect(comment, "worst game")) %>% 
+  group_by(name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+previous_games <- first_games_2020 %>% 
+  select(id, rank, average, bayes_average, users_rated) %>% 
+  rename(rank_2020 = rank) %>% 
+  rename(average_2020 = average) %>% 
+  rename(bayes_average_2020 = bayes_average) %>% 
+  rename(users_rated_2020 = users_rated)
+all_data <- left_join(second_games_2022, previous_games, by=("id"))
+#How did the recent pandemic changes affect the number of visits to the website?
+overall_average<-first_games_2020%>%
+inner_join(second_games_2022, by=c("average"))
+#This question can't be answered because the second file of games in 2022 on the website is significantly larger than the first ones in 2020. It would be impossible to remove the extra games from the second file in order to match the first. 
+  View(mixed_games_average)
+```
