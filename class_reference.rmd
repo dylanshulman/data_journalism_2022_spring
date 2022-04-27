@@ -87,7 +87,7 @@ mutate(new_column = case_when(
 mark it as 'under_10' in the new column, <10=under_10. 
 mutate(CleanDate = ymd_hms(column)) selects a column to make the data <date>
 mutate(new_column = floor_date(column, "month")) makes a column based on month, can be counted
-mutate(column = as.character(column)) makes the column datatype <chr>
+makes the column datatype <chr>
 mutate(column = as.numeric(column)) makes the column datatype <dbl>
 mutate(across(column, as.character)) makes column datatype <chr>
 bind_rows(list(dataframe, dataframe, dataframe)) puts dataframes together if column structure is the same
@@ -98,3 +98,4 @@ rename()
 distinct() removes duplicate rows
 mutate(column = str_sub(column, start=xL, end=xL)) removes excess characters from a column "x characters from the L eft"
 str_detect(city,"^Arnl") ~ "Arnold",) str_detect looks for characters in a character column, ^ means beginning of column 
+filter(!is.na(colummn)) this removes na rows
