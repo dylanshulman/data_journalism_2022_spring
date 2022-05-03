@@ -28,7 +28,7 @@ glimpse(detailed_data)
 # Most high rated category
 
 detailed_data %>% 
-  filter(average > 7) %>% 
+  filter(average > 7.5) %>% 
   group_by(boardgamecategory) %>% 
   summarize(count = n()) %>% 
   arrange(desc(count)) %>% 
@@ -88,6 +88,8 @@ pandy_data %>%
 Average difference in rating: -0.02565801
 Average number of new ratings: 124.5064
 
+So with games gaining an average of 125 reviews and only an average change of -0.03, I don't think the pandemic had a significant impact on the dataset. However, averages may not be the best way to generalize a dataset of this size, as there could be plenty of outliers that could spawn off stories. 
+
 ```{r}
 # New ratings 
 
@@ -101,7 +103,7 @@ users_20 <- pandy_data %>%
 
 users_22 - users_20
 ```
-3,116,253 new ratings total. 
+3,116,253 new ratings total. Across 21,831 games, that seems like a lot, but since we don't have another point from before the pandemic we can't establish whether or not this is comparitively an increase or decrease in ratings. 
 
 ```{r}
 # Min and Max
@@ -113,22 +115,162 @@ pandy_data %>%
 pandy_data %>% 
   filter(average_diff == -3.51)
 ```
-The minimum wasn't very interesting because it didn't have many ratings, but the max returned Pandemic Legacy board game, a 2020 release. It went up 2.2 points and got thousands more reviews over the two years. It's a game about a Soviet bioweapon. 
+The minimum wasn't very interesting because it didn't have many ratings, but the max returned Pandemic Legacy board game, a 2020 release. It went up 2.2 points and got thousands more reviews over the two years. It's a game about a Soviet bioweapon. I found it curious that during the COVID-19 pandemic, the game that saw the greatest increase in rating is literally called Pandemic. I decided to do some more research into the individual reviews of Pandemic Legacy. 
 
 ```{r}
+# Data set for exploration of Pandemic
+pandemic_legacy_reviews <- reviews_19m %>% 
+  filter(name == "Pandemic Legacy: Season 0")
+
+# Some stats that may be enlightening 
 median(pandemic_legacy_reviews$rating)
 pandemic_legacy_reviews %>% 
   group_by(rating) %>% 
   summarize(count = n()) %>% 
   arrange(desc(count))
 
-# Data set for later exploration of Pandemic
-pandemic_legacy_reviews <- reviews_19m %>% 
-  filter(name == "Pandemic Legacy: Season 0")
-```
-The game got crazy high reviews with a median of 9. 
+# How many new users rated the game? 
+pandyusers <- data_2020 %>% 
+  filter(name == "Pandemic Legacy: Season 0") %>% 
+  select(users_rated) %>% 
+  as.numeric
 
-# Number 3: What type of game (multiplayer or single-player) has the most reviews? Most positive reviews? Most negative reviews?
+data_2022 %>% 
+  filter(name == "Pandemic Legacy: Season 0") %>% 
+  select(users_rated) %>% 
+  as.numeric - pandyusers
+
+# Did anyone mention COVID in their review? 
+pandemic_legacy_reviews %>% 
+  filter(str_detect(comment, "covid") | str_detect(comment, "COVID") | str_detect(comment, "Covid") | str_detect(comment, "corona") | str_detect(comment, "Corona"))
+
+pandemic_legacy_reviews %>% 
+  filter(!is.na(comment))
+```
+The game got significantly high reviews with a median of 9, meaning most of the reviews were 9s and 10s. It did however get a ton of new reviews, jumping from only 93 users rated to 3,477 users rated. This could explain the dramatic increase in rating over the two year period, but it's still surprised that this many users had a positive first experience. 
+
+I thought it might be interesting to see if anyone even mentioned the global coronavirus pandemic, and I was surprised to return only two reviews. One did compare parts of the game to the COVID-19 pandemic, but the other one just said they couldn't play with their friends anymore because of the pandemic. I expected to see more reviewers correlating the two. Some of the reviews are in another language, and I didn't want to filter by "global pandemic" as I figured too many would be referencing the game and not real life, so it's conceivable that there are more reviews that mention COVID. 
+
+# Question 1.5: Who's the biggest hater on the website?
+
+With access to 19 million individual reviews, I was curious to see who was the most prolific reviewer who dished out the lowest ratings. I think it would be an interesting profile if there was a character that repeatedly dished out harsh critiques on a board game review website. 
+
+I only wanted to deal with the reviewers in the top 1% of those with the most reviews, so that any small-time haters couldn't throw off the results. There are 412,816 users total, and only 4,131 in the top 1% of posting the most reviews. 
+
+```{r}
+# Create a dataset with the reviews from only reviewers in the top 1% of most reviews
+counts <- reviews_19m %>% 
+  group_by(user) %>% 
+  summarize(review_count = n())
+mostreviews <- quantile(counts$review_count, 0.99)
+fulltime_reviewers <- reviews_19m %>% 
+  left_join(counts, by="user") %>% 
+  filter(review_count >= mostreviews)
+```
+
+```{r}
+# Create an empty dataframe to hold results
+user_stats_all <- tibble()
+
+# Duplicate the fulltime reviewers data set
+uh_oh <- fulltime_reviewers %>% 
+  filter(!is.na(rating))
+
+# Grab names of users
+names <- uh_oh %>% 
+  group_by(user) %>% 
+  summarize(count = n()) %>% 
+  select(user)
+
+# For loop, iterating over each row in our naics industry dataframe
+for(every_user in 1:nrow(names)) {
+
+    # Keep only the row for a given row number, get rid of every other row
+    user_name <- names %>%
+      slice(every_user) %>% 
+      as.character
+      
+    user_stats <- uh_oh %>% 
+      filter(user == user_name) %>% 
+      mutate(median_rating = median(rating)) %>% 
+      mutate(max_rating = max(rating)) %>% 
+      mutate(min_rating = min(rating)) %>% 
+      mutate(mean_rating = mean(rating)) %>% 
+      select(user, review_count, median_rating, max_rating, min_rating, mean_rating) %>% 
+      distinct
+
+    # Bind each individual employment info table to our employment_by_sector_all dataframe
+    user_stats_all <- user_stats_all %>%
+      bind_rows(user_stats) %>% 
+      distinct
+
+}
+
+# Display the completed dataframe
+user_stats_all
+
+# Make this a file so I don't have to run a 30 minute loop every time
+write_csv(user_stats_all, "user_stats_all.csv")
+```
+
+```{r}
+user_stats_all <- read_csv("user_stats_all.csv")
+```
+
+Now I have a nice and tidy dataset listing stats on all the users in the top 1% of those with the most reviews. Now I can do a simple arrange and find out if there are any users who make it their mission to leave negative reviews. 
+
+```{r}
+user_stats_all %>% 
+  arrange(median_rating) 
+
+user_stats_all %>% 
+  arrange(mean_rating)
+```
+
+Two reviewers stick out: rabid_schnauzer and yahoo79. Both have mean ratings under 2, and both have medians of 1 with around 1,000 reviews. I'll make datasets for both including only the reviews with comments to see if I can read any insight into these hypercritical critics. 
+
+```{r}
+shnauzer <- reviews_19m %>% 
+  filter(user == "rabid_schnauzer" & !is.na(comment)) %>% 
+  select(id, user, rating, comment, name) %>% 
+  left_join(detailed_data, by=("id")) %>% 
+  select(-row, -type, -primary, -thumbnail, -image, -suggested_num_players, -suggested_playerage, -suggested_language_dependence) 
+
+yahoo <- reviews_19m %>% 
+  filter(user == "yahoo79" & !is.na(comment))
+
+# What kind of games does shnauzer like?
+shnauzer %>% 
+  group_by(boardgamecategory) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+shnauzer %>% 
+  filter(str_detect(boardgamecategory, "Card Game"))
+```
+
+rabid_schnauzer only gives us a view into their decidedly negative head 60 times, while yahoo79 never writes comments for their reviews. I wanted to see what kind of games rabid_schnauzer reviews, so I added on some details from the other set. Twenty-eight of their 60 reviews are of card games, just under half. 
+
+# Question 2: Do the most reviewed games have a trend of positive or negative reviews?
+```{r}
+highsusers <- quantile(data_2022$users_rated, 0.95)
+
+most_rated <- data_2022 %>% 
+  filter(users_rated >= highsusers) %>% 
+  select(name, average, users_rated)
+
+sum_head <- most_rated %>% 
+  summarize(total = sum(average))
+  
+sum_average <- data_2022 %>% 
+  summarize(total = sum(average))
+
+sum_average / nrow(data_2022)
+sum_head / nrow(most_rated)
+```
+Average rating across the entire dataset is 6.42, and average of the top 5% is 7.16. The most reviewed games have a higher average rating by over a full point than the average of all the games. Typically you might assume that people wopuld only review something online if they really loved it, or really hated it. It seems in this case the top 25 games were all loved by the majority. 
+
+# Question 3: What type of game (multiplayer or single-player) has the most reviews? Most positive reviews? Most negative reviews?
 ```{r}
 # most reviews
 most_reviews <- reviews_19m %>% 
@@ -229,4 +371,16 @@ overall_average<-first_games_2020%>%
 inner_join(second_games_2022, by=c("average"))
 #This question can't be answered because the second file of games in 2022 on the website is significantly larger than the first ones in 2020. It would be impossible to remove the extra games from the second file in order to match the first. 
   View(mixed_games_average)
+```
+
+# Question 5: How do board games with longer playing times compare to shorter ones?  What board game category (fantasy, card game, deduction, etc.) was rated the highest and the lowest?
+```{r}
+mean_pt <- mean(detailed_data$playingtime)
+
+detailed_data %>% 
+  filter(playingtime <= pt_low) %>% 
+
+
+pt_low <- quantile(detailed_data$playingtime, 0.25)
+pt_high <- quantile(detailed_data$playingtime, 0.75)
 ```
