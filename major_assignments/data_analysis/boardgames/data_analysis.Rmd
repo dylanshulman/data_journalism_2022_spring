@@ -15,6 +15,8 @@ Dylan Shulman, Katie Benzan, Marianeli De Leon
 
 library(tidyverse)
 library(janitor)
+library(tidytext)
+
 data_2020 <- read_csv("2020-08-19.csv") %>% clean_names %>% rename(row = x1)
 data_2022 <- read_csv("2022-01-08.csv") %>% clean_names %>% rename(row = x1)
 reviews_19m <- read_csv("bgg-19m-reviews.csv") %>% clean_names %>% rename(row = x1)
@@ -64,7 +66,7 @@ pandy_data <- left_join(data_2022, old_data, by=("id"))
 
 I think we'll have trouble discovering how many times visitors went to the website over the course of the pandemic because we don't have any date information from before 2020 as a control. The biggest limitation of the data is its lack of date and time for reviews. Otherwise, I believe we'll be able to answer our questions. 
 
-# Question 1: Did the pandemic affect the number of reviews or the attitude of reviews?
+## Question 1: Did the pandemic affect the number of reviews or the attitude of reviews?
 ```{r}
 # First, gotta do a couple mutations to make difference columns 
 
@@ -151,7 +153,7 @@ The game got significantly high reviews with a median of 9, meaning most of the 
 
 I thought it might be interesting to see if anyone even mentioned the global coronavirus pandemic, and I was surprised to return only two reviews. One did compare parts of the game to the COVID-19 pandemic, but the other one just said they couldn't play with their friends anymore because of the pandemic. I expected to see more reviewers correlating the two. Some of the reviews are in another language, and I didn't want to filter by "global pandemic" as I figured too many would be referencing the game and not real life, so it's conceivable that there are more reviews that mention COVID. 
 
-# Question 1.5: Who's the biggest hater on the website?
+## Question 1.5: Who's the biggest hater on the website?
 
 With access to 19 million individual reviews, I was curious to see who was the most prolific reviewer who dished out the lowest ratings. I think it would be an interesting profile if there was a character that repeatedly dished out harsh critiques on a board game review website. 
 
@@ -166,9 +168,7 @@ mostreviews <- quantile(counts$review_count, 0.99)
 fulltime_reviewers <- reviews_19m %>% 
   left_join(counts, by="user") %>% 
   filter(review_count >= mostreviews)
-```
 
-```{r}
 # Create an empty dataframe to hold results
 user_stats_all <- tibble()
 
@@ -236,22 +236,104 @@ shnauzer <- reviews_19m %>%
   left_join(detailed_data, by=("id")) %>% 
   select(-row, -type, -primary, -thumbnail, -image, -suggested_num_players, -suggested_playerage, -suggested_language_dependence) 
 
+shnauzer_all <- reviews_19m %>% 
+  filter(user == "rabid_schnauzer") %>% 
+  select(id, user, rating, comment, name) %>% 
+  left_join(detailed_data, by=("id")) %>% 
+  select(-row, -type, -primary, -thumbnail, -image, -suggested_num_players, -suggested_playerage, -suggested_language_dependence) 
+
 yahoo <- reviews_19m %>% 
   filter(user == "yahoo79" & !is.na(comment))
 
-# What kind of games does shnauzer like?
-shnauzer %>% 
+yahoo_all <- reviews_19m %>% 
+  filter(user == "yahoo79") %>% 
+  select(id, user, rating, comment, name) %>% 
+  left_join(detailed_data, by=("id")) %>% 
+  select(-row, -type, -primary, -thumbnail, -image, -suggested_num_players, -suggested_playerage, -suggested_language_dependence) 
+
+# What kind of games does shnauzer review?
+shnauzer_all %>% 
   group_by(boardgamecategory) %>% 
   summarize(count = n()) %>% 
   arrange(desc(count))
 
-shnauzer %>% 
-  filter(str_detect(boardgamecategory, "Card Game"))
+shnauzer_all %>% 
+  filter(str_detect(boardgamecategory, "Card Game") | str_detect(boardgamecategory, "Wargame"))
+
+# What kind of games does yahoo review?
+yahoo_all %>% 
+  group_by(boardgamecategory) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+yahoo_all %>% 
+  filter(str_detect(boardgamecategory, "Card Game") | str_detect(boardgamecategory, "Wargame"))
 ```
 
-rabid_schnauzer only gives us a view into their decidedly negative head 60 times, while yahoo79 never writes comments for their reviews. I wanted to see what kind of games rabid_schnauzer reviews, so I added on some details from the other set. Twenty-eight of their 60 reviews are of card games, just under half. 
+rabid_schnauzer only gives us a view into their decidedly negative head 60 times, while yahoo79 never writes comments for their reviews. I wanted to see what kind of games rabid_schnauzer reviews, so I added on some details from the other set. Twenty-eight of their 60 reviews are of card games, just under half. In the full dataset, there are 381 reviews on card games or wargames out of the full 966 shnauzer reviews. 
 
-# Question 2: Do the most reviewed games have a trend of positive or negative reviews?
+yahoo also mostly reviews card games and wargames, making up 470 of his 1,144 reviews. Do the two haters review some of the same games? Do they agree in their rating? 
+
+```{r}
+
+```
+
+Another question I have is, what exactly is shnauzer saying in his reviews with comments? Why doesn't this user like so many games?
+```{r}
+unique_words <- shnauzer %>% select(comment) %>%
+  unnest_tokens(word, comment)
+
+data("stop_words")
+
+unique_words %>%
+  anti_join(stop_words) %>%
+  group_by(word) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(25) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+      labs(x = "Count",
+      y = "Unique words",
+      title = "Count of unique words found in shnauzer reviews")
+```
+
+Looking at the unique words in shnauzer's comments wasn't very helpful, only bringing across generic game terms. Perhaps looking at bigrams will provide a bit more context. 
+
+```{r}
+bigrams <- shnauzer %>%
+  unnest_tokens(bigram, comment, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  mutate(bigram = paste(word1, word2, sep=" ")) %>%
+  group_by(bigram) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) 
+bigrams %>%
+  top_n(10)
+
+bing <- get_sentiments("bing")
+
+bing_word_counts <- unique_words %>%
+  inner_join(bing) %>%
+  count(word, sentiment, sort = TRUE)
+bing_word_counts
+```
+Interestingly enough, shnauzer actually uses positive words more often than negative words. Is this reviewer confused about the rating system? Also, the highest bigram is "hidden information." What games were they talking about?
+
+```{r}
+shnauzer %>% 
+  filter(str_detect(comment, "hidden information"))
+```
+
+I took a step back from the code and actually read some of shnauzer's reviews where he gave a rating of 1 and a rating of 10. 
+
+Finally, what games did these critics actually give 10/10 ratings? 
+
+## Question 2: Do the most reviewed games have a trend of positive or negative reviews?
 ```{r}
 highsusers <- quantile(data_2022$users_rated, 0.95)
 
@@ -270,7 +352,7 @@ sum_head / nrow(most_rated)
 ```
 Average rating across the entire dataset is 6.42, and average of the top 5% is 7.16. The most reviewed games have a higher average rating by over a full point than the average of all the games. Typically you might assume that people wopuld only review something online if they really loved it, or really hated it. It seems in this case the top 25 games were all loved by the majority. 
 
-# Question 3: What type of game (multiplayer or single-player) has the most reviews? Most positive reviews? Most negative reviews?
+## Question 3: What type of game (multiplayer or single-player) has the most reviews? Most positive reviews? Most negative reviews?
 ```{r}
 # most reviews
 most_reviews <- reviews_19m %>% 
@@ -328,7 +410,10 @@ neutral_reviews <- reviews_19m %>%
 
 Most neutral reviews: Catan (28,966)
 
-# Question 4
+The game Pandemic seems to have the most positive reviews. Monopoly has the most negative reviews, and Catan has the most neutral reviews. It's ironic that during a pandemic, the board game became the most popular. This statistic insinuates that users were infatuated with the pandemic as much as they were locked down due to the virus. Contrary to presumption, Monopoly - a well-known, popular game - gathered the most negative reviews; however, about 10,000 reviews isn't close to the approximately 60,000 Pandemic gathered. The 10,000 reviews is the least of the top-3.
+
+## Question 4: How did the recent pandemic changes affect the number of visits to the website?
+
 ```{r}
 first_games_2020<-read_csv("data/2020-08-19.csv")%>% 
   clean_names %>% rename(row = x1)
@@ -373,8 +458,10 @@ inner_join(second_games_2022, by=c("average"))
   View(mixed_games_average)
 ```
 
-# Question 5: How do board games with longer playing times compare to shorter ones?  What board game category (fantasy, card game, deduction, etc.) was rated the highest and the lowest?
+## Question 5: How do board games with longer playing times compare to shorter ones?  What board game category (fantasy, card game, deduction, etc.) was rated the highest and the lowest?
 ```{r}
+
+# Still in progress 
 mean_pt <- mean(detailed_data$playingtime)
 
 detailed_data %>% 
@@ -384,3 +471,49 @@ detailed_data %>%
 pt_low <- quantile(detailed_data$playingtime, 0.25)
 pt_high <- quantile(detailed_data$playingtime, 0.75)
 ```
+
+## Question 6: What are common phrases in the reviews? What about in positive reviews? Negative ones? 
+```{r}
+unique_words_comments <- reviews_19m %>%
+  filter(rating==10)%>%
+  filter(!is.na(comment)) %>% 
+  select(comment) %>% 
+  unnest_tokens(word, comment) %>%
+  filter(!is.na(word))
+ 
+  unique_words_comments%>%
+  count(word, sort = TRUE) %>%
+  top_n(25) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+      labs(x = "Count",
+      y = "Unique words",
+      title = "Count of unique words found in reviews of Pandemic")
+  
+  data("stop_words")
+  
+  unique_words_comments %>%
+  anti_join(stop_words) %>%
+  group_by(word) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(10)
+```
+
+```{r}
+# Unfinished code for bigrams 
+ unique_words_comments %>%
+  unnest_tokens(bigram, word, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  mutate(bigram = paste(word1, word2, sep=" ")) %>%
+  group_by(bigram) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(10)
+```
+
