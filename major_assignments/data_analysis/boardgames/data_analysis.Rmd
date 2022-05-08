@@ -182,7 +182,7 @@ names <- uh_oh %>%
   summarize(count = n()) %>% 
   select(user)
 
-# For loop, iterating over each row in our naics industry dataframe
+# For loop
 for(every_user in 1:nrow(names)) {
 
     # Keep only the row for a given row number, get rid of every other row
@@ -199,7 +199,7 @@ for(every_user in 1:nrow(names)) {
       select(user, review_count, median_rating, max_rating, min_rating, mean_rating) %>% 
       distinct
 
-    # Bind each individual employment info table to our employment_by_sector_all dataframe
+    # Bind all rows
     user_stats_all <- user_stats_all %>%
       bind_rows(user_stats) %>% 
       distinct
@@ -227,7 +227,7 @@ user_stats_all %>%
   arrange(mean_rating)
 ```
 
-Two reviewers stick out: rabid_schnauzer and yahoo79. Both have mean ratings under 2, and both have medians of 1 with around 1,000 reviews. I'll make datasets for both including only the reviews with comments to see if I can read any insight into these hypercritical critics. 
+Two reviewers stick out: rabid_schnauzer and yahoo79. Both have mean ratings under 2, and both have medians of 1 nearing 1,000 reviews. I'll make datasets for both including only the reviews with comments to see if I can read any insight into these hypercritical critics. 
 
 ```{r}
 shnauzer <- reviews_19m %>% 
@@ -276,9 +276,51 @@ yahoo also mostly reviews card games and wargames, making up 470 of his 1,144 re
 
 ```{r}
 
+ya <- yahoo_all %>% 
+  select(id, name, rating, name) %>% 
+  rename(yahoo_rating = rating)
+
+haters <- shnauzer_all %>% 
+  select(id, rating, comment) %>% 
+  rename(shnauzer_rating = rating, shnauzer_comment = comment)
+
+haters <- full_join(ya, haters, by="id")
+haters_work_together <- haters %>% 
+  filter(!is.na(shnauzer_rating)) %>% 
+  filter(!is.na(yahoo_rating)) %>% 
+  mutate(difference = case_when(
+    yahoo_rating != shnauzer_rating ~ abs(yahoo_rating - shnauzer_rating)
+  ))
+
+haters_agree <- haters_work_together %>% 
+  filter(is.na(difference)) %>% 
+  arrange(desc(yahoo_rating))
+
+haters_work_together
+haters_disagree
 ```
 
+The two critics have reviewed 417 of the same games, but agreed on rankings for 306 of those. The 306 common ratings are all 1/10s save for two ratings of three. Power Grid: Factory Manager and Cosmic Encounter were apparently good enough to warrant a solid 3/10 rating from these two haters. 
+
+If they're so negative, what games did these critics actually give 10/10 ratings? 
+
+```{r}
+impressive <- haters %>% 
+  filter((shnauzer_rating == 10) | (yahoo_rating == 10))
+
+yahoo_all %>% 
+  filter(rating == 10)
+
+shnauzer_all %>% 
+  filter(rating == 10)
+
+haters_work_together %>% 
+  filter((shnauzer_rating == 10) & (yahoo_rating == 10))
+```
+rabid_shnauzer has given 10/10 reviews significantly less than yahoo79, only dishing out 17 10s while yahoo had 80. There isn't a single game that both felt deserved a perfect score.  
+
 Another question I have is, what exactly is shnauzer saying in his reviews with comments? Why doesn't this user like so many games?
+
 ```{r}
 unique_words <- shnauzer %>% select(comment) %>%
   unnest_tokens(word, comment)
@@ -327,11 +369,23 @@ Interestingly enough, shnauzer actually uses positive words more often than nega
 ```{r}
 shnauzer %>% 
   filter(str_detect(comment, "hidden information"))
+
+crux <- shnauzer %>% 
+  filter(str_detect(comment, "rating"))
 ```
+Looks like "hidden information" may be a component in some of the games shnauzer reviews. What's more interesting is what I found after I took a step back from the code and actually read some of shnauzer's reviews.  
 
-I took a step back from the code and actually read some of shnauzer's reviews where he gave a rating of 1 and a rating of 10. 
+After noticing the word "rating" strike so high on shnauzer's single-word rhetoric, I believe I've uncovered the crux of their negative mentality: they have a fundamental grudge against BBG's rating system. Just reading the comments of their reviews that mention "rating," this becomes glaringly apparent. In their reviews of 7 Wonders, shnauzer blames the popularity of the game on paid sponsorships, and so they take it upon themselves to "downvote as hard as I possibly can" and reverse this percieved capitalistic corruption of board game reviews. For Codex: Card-Time Strategy – Deluxe Set, shnauzer states "the BBG rating system is worse than Congress." 
 
-Finally, what games did these critics actually give 10/10 ratings? 
+This also explains why so much of shnauzer's diction is positive, since they often say that they thoroughly enjoyed a game but still felt it was overrated, necessitating a harsh rating to lower its status. 
+
+However, shnauzer is no saint and is subject to immoral reviewing practices in their own right. For the game Dominion, they slashed the rating because they didn't like the fanbase of the game on the site.
+
+But the best example is their review of Darkest Night: "A friend of mine makes money if you buy this, hence my rating is a rampant shill. Just like every single other rating on this site, except I give you an honest explanation." rabid_shnauzer is a lone righteous, hypocrite in a sea of thousands of board game reviewers. 
+
+If I were pitching a story to an editor, although this doesn't classically fall into a newsworthy subject, I would use the rabid_shnauzer anecdote as a jumping point for a dive into this community. It sounds like there is a high level of user interaction on the site, and even some tension. It could make for a fun writeup to grab clicks online. 
+
+Alternatively, it could be a starting point on a story that examines how exactly online reviews represent their products. It could span multiple websites, like Letterboxd and Goodreads, and decipher what the average ratings tell about a product: Is it sponsored? Viral? Or actually good quality? 
 
 ## Question 2: Do the most reviewed games have a trend of positive or negative reviews?
 ```{r}
@@ -458,24 +512,17 @@ inner_join(second_games_2022, by=c("average"))
   View(mixed_games_average)
 ```
 
-## Question 5: How do board games with longer playing times compare to shorter ones?  What board game category (fantasy, card game, deduction, etc.) was rated the highest and the lowest?
-```{r}
-
-# Still in progress 
-mean_pt <- mean(detailed_data$playingtime)
-
-detailed_data %>% 
-  filter(playingtime <= pt_low) %>% 
-
-
-pt_low <- quantile(detailed_data$playingtime, 0.25)
-pt_high <- quantile(detailed_data$playingtime, 0.75)
-```
-
-## Question 6: What are common phrases in the reviews? What about in positive reviews? Negative ones? 
+## Question 5: What are common phrases in the reviews? What about in positive reviews? Negative ones? 
 ```{r}
 unique_words_comments <- reviews_19m %>%
   filter(rating==10)%>%
+  filter(!is.na(comment)) %>% 
+  select(comment) %>% 
+  unnest_tokens(word, comment) %>%
+  filter(!is.na(word))
+
+unique_words_negative <- reviews_19m %>%
+  filter(rating==1)%>%
   filter(!is.na(comment)) %>% 
   select(comment) %>% 
   unnest_tokens(word, comment) %>%
