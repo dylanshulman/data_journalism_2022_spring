@@ -297,7 +297,7 @@ haters_agree <- haters_work_together %>%
   arrange(desc(yahoo_rating))
 
 haters_work_together
-haters_disagree
+haters_agree
 ```
 
 The two critics have reviewed 417 of the same games, but agreed on rankings for 306 of those. The 306 common ratings are all 1/10s save for two ratings of three. Power Grid: Factory Manager and Cosmic Encounter were apparently good enough to warrant a solid 3/10 rating from these two haters. 
@@ -551,9 +551,12 @@ unique_words_negative <- reviews_19m %>%
 ```
 
 ```{r}
-# Unfinished code for bigrams 
- unique_words_comments %>%
-  unnest_tokens(bigram, word, token = "ngrams", n = 2) %>%
+# Finding bigrams in the positive and negative reviews 
+positive_bigrams <- reviews_19m %>%
+  filter(rating == 10) %>% 
+  filter(!is.na(comment)) %>% 
+  select(comment) %>% 
+  unnest_tokens(bigram, comment, token = "ngrams", n = 2) %>%
   separate(bigram, c("word1", "word2"), sep = " ") %>%
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word) %>%
@@ -561,6 +564,30 @@ unique_words_negative <- reviews_19m %>%
   group_by(bigram) %>%
   tally(sort=TRUE) %>%
   mutate(percent = (n/sum(n))*100) %>%
-  top_n(10)
+  top_n(25)
+
+negative_bigrams <- reviews_19m %>%
+  filter(rating == 1) %>% 
+  filter(!is.na(comment)) %>% 
+  select(comment) %>% 
+  unnest_tokens(bigram, comment, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  mutate(bigram = paste(word1, word2, sep=" ")) %>%
+  group_by(bigram) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(25)
+
+# Write them to csv files so I don't have to wait forever 
+write_csv(positive_bigrams, "positive_bigrams.csv")
+write_csv(negative_bigrams, "negative_bigrams.csv")
 ```
+
+```{r}
+positive_bigrams <- read_csv("positive_bigrams.csv") 
+negative_bigrams <- read_csv("negative_bigrams.csv")
+```
+
 
