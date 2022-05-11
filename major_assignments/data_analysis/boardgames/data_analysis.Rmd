@@ -480,6 +480,7 @@ second_reviews_19m<-read_csv("data/bgg-15m-reviews.csv")%>%
 game_details<-read_csv("data/games_detailed_info.csv")%>% 
   clean_names %>% rename(row = x1)
 ```
+
 ```{r}
 game_details %>% 
   filter(average > 7) %>% 
@@ -513,15 +514,58 @@ inner_join(second_games_2022, by=c("average"))
 ```
 
 ## Question 5: What are common phrases in the reviews? What about in positive reviews? Negative ones? 
+
 ```{r}
-unique_words_comments <- reviews_19m %>%
+game_details%>%
+    filter(primary =="Pandemic")
+  
+second_reviews_19m%>%
+  filter(rating==10)%>%
+  filter(!is.na(comment))%>%
+  mutate(comment = gsub("http.*","", comment))
+ unique_words_comments <- second_reviews_19m %>% select(comment) %>%
+  unnest_tokens(word, comment)%>%
+    filter(!is.na(word))
+    View(unique_words_comments)
+  
+  unique_words_comments%>%
+  count(word, sort = TRUE) %>%
+  top_n(25) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+      labs(x = "Count",
+      y = "Unique words",
+      title = "Count of unique words found in reviews of Pandemic")
+   data("stop_words")
+  
+  unique_words_comments %>%
+  anti_join(stop_words) %>%
+  group_by(word) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(10)
+  
+  unique_words_comments %>%
+  unnest_tokens(bigram, word, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  mutate(bigram = paste(word1, word2, sep=" ")) %>%
+  group_by(bigram) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(10)
+  
+  unique_words_comments <- second_reviews_19m %>%
   filter(rating==10)%>%
   filter(!is.na(comment)) %>% 
   select(comment) %>% 
   unnest_tokens(word, comment) %>%
   filter(!is.na(word))
-
-unique_words_negative <- reviews_19m %>%
+unique_words_negative <- second_reviews_19m %>%
   filter(rating==1)%>%
   filter(!is.na(comment)) %>% 
   select(comment) %>% 
@@ -548,11 +592,9 @@ unique_words_negative <- reviews_19m %>%
   tally(sort=TRUE) %>%
   mutate(percent = (n/sum(n))*100) %>%
   top_n(10)
-```
-
-```{r}
+  
 # Finding bigrams in the positive and negative reviews 
-positive_bigrams <- reviews_19m %>%
+positive_bigrams <- second_reviews_19m %>%
   filter(rating == 10) %>% 
   filter(!is.na(comment)) %>% 
   select(comment) %>% 
@@ -565,8 +607,7 @@ positive_bigrams <- reviews_19m %>%
   tally(sort=TRUE) %>%
   mutate(percent = (n/sum(n))*100) %>%
   top_n(25)
-
-negative_bigrams <- reviews_19m %>%
+negative_bigrams <- second_reviews_19m %>%
   filter(rating == 1) %>% 
   filter(!is.na(comment)) %>% 
   select(comment) %>% 
@@ -583,11 +624,10 @@ negative_bigrams <- reviews_19m %>%
 # Write them to csv files so I don't have to wait forever 
 write_csv(positive_bigrams, "positive_bigrams.csv")
 write_csv(negative_bigrams, "negative_bigrams.csv")
-```
-
-```{r}
 positive_bigrams <- read_csv("positive_bigrams.csv") 
 negative_bigrams <- read_csv("negative_bigrams.csv")
+
+#Positive bigrams demonstrates how players on the gaming site feel towards certain games. "Board game" had the most bigrams within the reviews which is contradictory to the negative bigrams as we later discovered. We would've thought bigrams like "favorite game", "amazing game" or something similar would've taken the top spot but they weren't even in the top 10 bigrams. There is an assumption that more reviewers seemed to enjoy four player games more than two players games which could mean that many of the games on the site are more suited for four players instead of two. The amount of negative bigrams within negative reviews make some sense based on how players will express their hatred of whatever game they're reviewing. Nearly half of the reviews had "worst game" within them which is the opposite of having someone say a game is the best game there ever was. What was interesting was how the bigram "board game" was present in more reviews than the bigram "card game" "Board game" appears 32% of the bigrams made while "card game" only accounts for 18.2% of the bigrams. We established that Monopoly is the worst rated game in the site, which might account for the majority of the negative reviews that involve board games. 
 ```
 
 
